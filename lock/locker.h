@@ -11,18 +11,31 @@ class sem {
 private:
     sem_t m_sem;
 public:
-    sem(){
-        if(sem_int(&m_sem,0,0)!= 0){
+    sem()
+    {
+        if (sem_init(&m_sem, 0, 0) != 0)//初始化
+        {
             throw std::exception();
         }
     }
-    sem(int num){
-        if(sem_int(&m_sem,0,num)!= 0){
+    sem(int num)
+    {
+        if (sem_init(&m_sem, 0, num) != 0)//初始化
+        {
             throw std::exception();
         }
     }
-    ~sem(){
+    ~sem()
+    {
         sem_destroy(&m_sem);
+    }
+    bool wait()
+    {
+        return sem_wait(&m_sem) == 0;//原子操作-1 为0时阻塞
+    }
+    bool post()
+    {
+        return sem_post(&m_sem) == 0;//返回0表示成功 原子操作+1
     }
 };
 
@@ -52,6 +65,10 @@ public:
     }
 };
 class cond{
+private:
+    //static pthread_mutex_t m_mutex;
+    pthread_cond_t m_cond;//pthread_cond_t 对象 条件变量
+public:
     cond()
     {
         if (pthread_cond_init(&m_cond, NULL) != 0)//初始化一个条件变量
@@ -64,7 +81,29 @@ class cond{
     {
         pthread_cond_destroy(&m_cond);//销毁一个条件变量
     }
-private:
-    pthread_cond_t  m_cond;//pthread_cond_t 对象 条件变量
+    bool wait(pthread_mutex_t *m_mutex)//接受信号 和sign通常不是一个线程 阻塞等待一个条件变量
+    {
+        int ret = 0;
+        //pthread_mutex_lock(&m_mutex);
+        ret = pthread_cond_wait(&m_cond, m_mutex);
+        //pthread_mutex_unlock(&m_mutex);
+        return ret == 0;
+    }
+    bool timewait(pthread_mutex_t *m_mutex, struct timespec t)//限时等待一个条件变量 和sign通常不是一个线程
+    {
+        int ret = 0;
+        //pthread_mutex_lock(&m_mutex);
+        ret = pthread_cond_timedwait(&m_cond, m_mutex, &t);
+        //pthread_mutex_unlock(&m_mutex);
+        return ret == 0;
+    }
+    bool signal()
+    {
+        return pthread_cond_signal(&m_cond) == 0;//唤醒至少一个阻塞在条件变量上的线程  和wait通常不是一个线程
+    }
+    bool broadcast()
+    {
+        return pthread_cond_broadcast(&m_cond) == 0;//唤醒全部阻塞在条件变量上的线程
+    }
 };
 #endif //WEBSERVER_LOCKER_H

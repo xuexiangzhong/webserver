@@ -1,10 +1,11 @@
-# cmake_minimum_required(VERSION <specify CMake version here>)
-project(webserver C)
+cmake_minimum_required(VERSION 3.20)
+project(webserver)
 
-set(CMAKE_C_STANDARD 11)
-
-include_directories(.)
-include_directories(lock)
-
-add_executable(webserver
-        lock/locker.h)
+set(CMAKE_CXX_STANDARD 11)
+#include_directories(SYSTEM "/foo/bar")
+#include_directories(.)
+#include_directories(lock)
+#include_directories("${PROJECT_SOURCE_DIR}")
+add_executable(webserver main.cpp ./log/log.cpp)
+#add_executable(main main.cpp)
+target_link_libraries(webserver pthread)
